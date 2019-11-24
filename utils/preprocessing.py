@@ -125,7 +125,7 @@ def label_to_index(files):
     labels = sorted(list(set(labels)))
 
     num_to_class = dict((label, index) for (index, label) in enumerate(labels))
-    return num_to_class
+    return num_to_class, labels
 
 
 def check_shapes(file, shape_type, is_list=False):

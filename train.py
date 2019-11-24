@@ -1,69 +1,55 @@
-import os
-import pickle
+import json
 
 from keras.utils import to_categorical
-from sklearn.metrics import confusion_matrix
-import numpy as np
 
 from source.data_loader import data
-from settings import NS_STANDARDIZED_VALID_DIR, NS_STANDARDIZED_TRAIN_DIR, \
-    NS_STANDARDIZED_TEST_DIR, NS_NORMALIZED_TRAIN_DIR, NS_NORMALIZED_VALID_DIR, NS_NORMALIZED_TEST_DIR
-from source.models import BiLSTM, ANN
-from source.plotting_predictions import plot_confidence, plot_classes, create_dict_conf, plot_confidence_per_class, \
-    plot_confusion_matrix, plot_history
-from utils.split_data import save_data
-from utils.utilites import smooth_labels, count_values
+from source.models import CNN_2D
+from utils.utilites import smooth_labels
 
-smooth_factor = 0.0
+smooth_factor = 0.5
 shapes = dict(input_shape_1=(20, 120),
               input_shape_2=(4, 24),
               input_shape_3=(4, 32))
 
 standardized = True
 normalized = False
-NUM_OF_CLASSES = 8
-top_classes = True
+NUM_OF_CLASSES = 10
 
 # load_dir = '/mnt/hdd/PycharmProjects/pollen_classification/new_weights/ns/normalized/smooth_factor_0.1/optimizer_adam' \
 #            '/learning_rate_type_cosine/model_name_CNNRNN/ '
-load_dir = '/mnt/hdd/PycharmProjects/pollen_classification/new_weights/os/standard_normal/smooth_factor_0.0/' \
-           'optimizer_adam/learning_rate_type_cosine/model_name_ANN/'
+# load_dir = '/mnt/hdd/PycharmProjects/pollen_classification/new_weights/ns/standard_normal/smooth_factor_0.0/' \
+#            'optimizer_adam/learning_rate_type_cosine/model_name_ANN/'
+save_dir = './model_weights/CNN_2D'
 
 parameters = {'epochs': 30,
-              'batch_size': 256,
+              'batch_size': 64,
               'optimizer': 'adam',
               'num_classes': NUM_OF_CLASSES,
-              'save_dir': f'{os.path.join(load_dir, str(NUM_OF_CLASSES))}',
-              'load_dir': f'{os.path.join(load_dir, "8/25-0.872-0.713-0.949-0.694.hdf5")}'}
-
+              'save_dir': save_dir}
+# 'load_dir': f'{os.path.join(load_dir, "8/25-0.872-0.713-0.949-0.694.hdf5")}'}
 
 if __name__ == '__main__':
+    with open('./utils/ns_most_common.json', 'r') as fp:
+        classes = json.load(fp)
 
     X_train, y_train, X_valid, y_valid, X_test, y_test, weight_class, dict_mapping = data(standardized=True,
-                                                                                          num_of_classes=8,
-                                                                                          top_classes=top_classes,
-                                                                                          ns=False,
-                                                                                          create_4d_arr=False)
-    # new_y = y_train + y_valid + y_test
-    # new_X = [[X_train[0] + X_valid[0] + X_test[0]],
-    #          [X_train[1] + X_valid[1] + X_test[1]],
-    #          [X_train[2] + X_valid[2] + X_test[2]]]
-    # cv = count_values(new_y)
-    print()
+                                                                                          ns=True,
+                                                                                          num_of_classes=NUM_OF_CLASSES,
+                                                                                          create_4d_arr=True)
     y_train_cate = to_categorical(y_train, NUM_OF_CLASSES)
     y_valid_cate = to_categorical(y_valid, NUM_OF_CLASSES)
     y_test_cate = to_categorical(y_test, NUM_OF_CLASSES)
+
+    smooth_labels(y_train_cate, smooth_factor)
     #
-    # smooth_labels(y_train_cate, smooth_factor)
-    #
-    dnn = ANN(**parameters)
-    dnn.load_model(parameters["load_dir"])
-    # # dnn.train(X_train,
-    # #           y_train_cate,
-    # #           X_valid,
-    # #           y_valid_cate,
-    # #           weight_class=weight_class,
-    # #           lr_type='cyclic')
+    dnn = CNN_2D(**parameters)
+    # dnn.load_model(parameters["load_dir"])
+    dnn.train(X_train,
+              y_train_cate,
+              X_valid,
+              y_valid_cate,
+              weight_class=weight_class,
+              lr_type='cyclic')
     print()
     # import os.path as osp
     # os.makedirs('./test', exist_ok=True)

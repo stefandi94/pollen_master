@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 
 from settings import NS_STANDARDIZED_TRAIN_DIR, NS_NORMALIZED_VALID_DIR, NS_NORMALIZED_TEST_DIR, \
@@ -9,7 +11,7 @@ from utils.split_data import cut_classes, label_mappings, save_data
 from utils.utilites import calculate_weights
 
 
-def data(standardized, num_of_classes, top_classes=True, ns=True, create_4d_arr=False):
+def data(standardized, num_of_classes, ns=True, create_4d_arr=False):
     if ns:
         if standardized:
             TRAIN_DIR = NS_STANDARDIZED_TRAIN_DIR
@@ -57,25 +59,10 @@ def data(standardized, num_of_classes, top_classes=True, ns=True, create_4d_arr=
             X_valid[index] = create_4d_array(X_valid[index])
             X_test[index] = create_4d_array(X_test[index])
 
-    X_train, y_train, classes_to_take = cut_classes(data=X_train,
-                                                    labels=y_train,
-                                                    num_of_class=num_of_classes,
-                                                    top=top_classes)
-    X_valid, y_valid, _ = cut_classes(data=X_valid,
-                                      labels=y_valid,
-                                      top=True,
-                                      classes_to_take=classes_to_take)
-
-    X_test, y_test, _ = cut_classes(data=X_test,
-                                    labels=y_test,
-                                    top=True,
-                                    classes_to_take=classes_to_take)
-
-    # if num_of_classes == max(np.unique(y_train)):
-    # dict_mapping = dict((index, index) for index in np.unique(y_train))
-    # else:
-    dict_mapping = label_mappings(classes_to_take)
-    save_data(dict_mapping, TRAIN_DIR, f'dict_mapping_{num_of_classes}')
+    dict_mapping = dict((y_label, index) for index, y_label in enumerate(np.unique(y_train)))
+    dict_mapping_path = os.path.join(TRAIN_DIR, f'dict_mapping_{num_of_classes}.pickle')
+    if not os.path.isfile(dict_mapping_path):
+        save_data(dict_mapping, TRAIN_DIR, f'dict_mapping_{num_of_classes}')
 
     y_train = [dict_mapping[label] for label in y_train]
     y_valid = [dict_mapping[label] for label in y_valid]

@@ -1,3 +1,4 @@
+import json
 import operator
 import os
 import os.path as osp
@@ -7,7 +8,7 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 
-from utils.converting_raw_data import transform_raw_data
+from utils.converting_raw_data import transform_raw_data, find_most_common
 from settings import RANDOM_STATE, OS_RAW_DATA_DIR, OS_DATA_DIR, NS_RAW_DATA_DIR, NS_DATA_DIR
 from utils.utilites import count_values
 
@@ -15,18 +16,15 @@ np.random.seed(RANDOM_STATE)
 
 
 def load_data(data_path, filename):
-    with open(osp.join(data_path, f'{filename}.pckl'), 'rb') as handle:
+    with open(osp.join(data_path, f'{filename}.pickle'), 'rb') as handle:
         data = pickle.load(handle)
-    # data = np.load(osp.join(data_path, f'{filename}.npy'))
     return data
 
 
 def save_data(file, data_path, filename):
-
-    # os.makedirs(data_path, exist_ok=True)
-    # np.save(file, osp.join(data_path, f'{filename}.npy'))
-    with open(osp.join(data_path, f'{filename}.pckl'), 'wb') as handle:
-        pickle.dump(file, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    os.makedirs(data_path, exist_ok=True)
+    with open(osp.join(data_path, f'{filename}.pickle'), 'wb') as handle:
+        pickle.dump(file, handle)
 
 
 def create_train_valid_test_data(data: dict,
@@ -98,15 +96,13 @@ def convert_data_to_normal_0_1(data, min_value, max_value):
 
 def split_and_save_data(raw_data_path,
                         output_data_path,
+                        most_common_labels,
                         data_normalization=True,
                         data_standardization=True):
     print(f'Started transforming raw data at {datetime.now().time()}')
-    data, labels, label_to_index, feature_names = transform_raw_data(raw_data_path)
+    data, labels, string_labels, label_to_index, feature_names = transform_raw_data(raw_data_path, most_common_labels)
 
-    with open(osp.join(output_data_path, 'label_to_index.pckl'), 'wb') as handle:
-        pickle.dump(label_to_index, handle, protocol=pickle.HIGHEST_PROTOCOL)
-
-    # save_data(label_to_index, data_path=output_data_path, filename="label_to_index")
+    save_data(label_to_index, data_path=output_data_path, filename="label_to_index")
 
     print(f'Started creating train/test data {datetime.now().time()}')
     data_to_save, labels_to_save = create_train_valid_test_data(data=data,
@@ -137,12 +133,6 @@ def split_and_save_data(raw_data_path,
                 if not osp.exists(standardized_path):
                     os.makedirs(standardized_path)
 
-                # with open(osp.join(standardized_path, f'{feature}.pckl'), 'wb') as handle:
-                #     file = convert_data_to_standard(data_to_save[dir_index][feature_index],
-                #                                     stat_comp["min"],
-                #                                     stat_comp["max"])
-                #     pickle.dump(file, handle, protocol=pickle.HIGHEST_PROTOCOL)
-
                 save_data(file=convert_data_to_normal_0_1(data_to_save[dir_index][feature_index],
                                                           stat_comp["min"],
                                                           stat_comp["max"]),
@@ -154,12 +144,6 @@ def split_and_save_data(raw_data_path,
                 if not osp.exists(normalize_path):
                     os.makedirs(normalize_path)
 
-                # with open(osp.join(normalize_path, f'{feature}.pckl'), 'wb') as handle:
-                #     file = convert_data_to_standard_normal(data_to_save[dir_index][feature_index],
-                #                                            stat_comp["mean_value"],
-                #                                            stat_comp["std_value"])
-                #     pickle.dump(file, handle, protocol=pickle.HIGHEST_PROTOCOL)
-                #
                 save_data(file=convert_data_to_standard_normal(data_to_save[dir_index][feature_index],
                                                                stat_comp["mean"],
                                                                stat_comp["std"]),
@@ -213,6 +197,11 @@ def create_csv(data):
 
 
 if __name__ == '__main__':
+    with open('label_dict_ns.json', 'r') as fp:
+        label_dict_ns = json.load(fp)
 
-    split_and_save_data(NS_RAW_DATA_DIR, NS_DATA_DIR)
+    label_dict_ns = dict((key, int(value)) for key, value in label_dict_ns.items())
+    ns_most_common = find_most_common(label_dict_ns)
+    most_common_labels = [label[0] for label in ns_most_common]
+    split_and_save_data(NS_RAW_DATA_DIR, NS_DATA_DIR, most_common_labels)
     # split_and_save_data(OS_RAW_DATA_DIR, OS_DATA_DIR)

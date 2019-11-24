@@ -8,7 +8,7 @@ from keras.utils import to_categorical
 
 from settings import OS_TRAIN_DIR, NS_TRAIN_DIR, NS_DATA_DIR, OS_DATA_DIR
 from source.get_model import get_model
-from source.models import ANN
+from source.models import CNN_2D
 from utils.converting_raw_data import transform_raw_data
 from utils.split_data import load_data, convert_data_to_normal_0_1, convert_data_to_standard_normal
 
@@ -19,8 +19,8 @@ NUM_OF_CLASSES = 50
 normalize = True
 NS = True
 
-load_dir = '/mnt/hdd/PycharmProjects/pollen_classification/new_weights/ns/standard_normal/smooth_factor_0.0/' \
-           'optimizer_adam/learning_rate_type_cosine/model_name_ANN/50/38-1.432-0.606-1.488-0.594.hdf5'
+# load_dir = '/mnt/hdd/PycharmProjects/pollen_classification/new_weights/ns/standard_normal/smooth_factor_0.0/' \
+#            'optimizer_adam/learning_rate_type_cosine/model_name_ANN/50/38-1.432-0.606-1.488-0.594.hdf5'
 
 # ova ima 10 clase
 # load_dir = '/mnt/hdd/PycharmProjects/pollen_classification/new_weights/os/standardized/smooth_factor_0.0/' \
@@ -30,8 +30,7 @@ parameters = {'epochs': 30,
               'batch_size': 256,
               'optimizer': 'adam',
               'num_classes': NUM_OF_CLASSES,
-              'save_dir': f'./save_dir',
-              'load_dir': f'{load_dir}'}
+              'save_dir': f'./save_dir'}
 
 if NS:
     # load statistical components
@@ -79,7 +78,7 @@ new_labels = [dict_mapping[label] for label in labels]
 # new_labels = [labels_pickle_mapping[label] for label in new_labels]
 cate_label = to_categorical(new_labels, num_classes=NUM_OF_CLASSES)
 # cate_shuffled_labels = to_categorical(new_shuffled_labels, num_classes=NUM_OF_CLASSES)
-dl_model = ANN()
+dl_model = CNN_2D()
 dl_model.load_model(parameters['load_dir'])
 
 # y_pred = dl_model.predict(data)

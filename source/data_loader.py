@@ -1,74 +1,82 @@
 import os
-
-import numpy as np
+from typing import List
 
 from settings import NS_STANDARDIZED_TRAIN_DIR, NS_NORMALIZED_VALID_DIR, NS_NORMALIZED_TEST_DIR, \
-    NS_NORMALIZED_TRAIN_DIR, NS_STANDARDIZED_TEST_DIR, NS_STANDARDIZED_VALID_DIR, OS_NORMALIZED_TEST_DIR, \
-    OS_NORMALIZED_VALID_DIR, OS_NORMALIZED_TRAIN_DIR, OS_STANDARDIZED_TEST_DIR, OS_STANDARDIZED_VALID_DIR, \
-    OS_STANDARDIZED_TRAIN_DIR
+    NS_NORMALIZED_TRAIN_DIR, NS_STANDARDIZED_TEST_DIR, NS_STANDARDIZED_VALID_DIR, NS_DATA_DIR
 from source.data_reader import load_all_data, create_3d_array, create_4d_array
-from utils.split_data import cut_classes, label_mappings, save_data
-from utils.utilites import calculate_weights
+from utils.split_data import save_data, load_data
+from utils.utilites import calculate_weights, get_features
 
 
-def data(standardized, num_of_classes, ns=True, create_4d_arr=False):
-    if ns:
-        if standardized:
-            TRAIN_DIR = NS_STANDARDIZED_TRAIN_DIR
-            VALID_DIR = NS_STANDARDIZED_VALID_DIR
-            TEST_DIR = NS_STANDARDIZED_TEST_DIR
-        else:
-            TRAIN_DIR = NS_NORMALIZED_TRAIN_DIR
-            VALID_DIR = NS_NORMALIZED_VALID_DIR
-            TEST_DIR = NS_NORMALIZED_TEST_DIR
+def data(standardized: bool,
+         train: bool,
+         save_dir: str,
+         create_4d_arr: bool = False,
+         features: List[int] = [0, 1, 2]):
+    """
+    Load data for training or testing model and convert it to right format
+    :param standardized: Whether to load standardized data if true, otherwise load normalized data
+    :param train: Should load data for training or predicting
+    :param save_dir: If model is not training, path to weights of classes and mapping of classes of already trained model
+    :param create_4d_arr: Whether to convert data to 4d format (images)
+    :param features
+    :return:
+    """
+    if standardized:
+        TRAIN_DIR = NS_NORMALIZED_TRAIN_DIR
+        VALID_DIR = NS_NORMALIZED_VALID_DIR
+        TEST_DIR = NS_NORMALIZED_TEST_DIR
     else:
-        if standardized:
-            TRAIN_DIR = OS_STANDARDIZED_TRAIN_DIR
-            VALID_DIR = OS_STANDARDIZED_VALID_DIR
-            TEST_DIR = OS_STANDARDIZED_TEST_DIR
-        else:
-            TRAIN_DIR = OS_NORMALIZED_TRAIN_DIR
-            VALID_DIR = OS_NORMALIZED_VALID_DIR
-            TEST_DIR = OS_NORMALIZED_TEST_DIR
+        TRAIN_DIR = NS_STANDARDIZED_TRAIN_DIR
+        VALID_DIR = NS_STANDARDIZED_VALID_DIR
+        TEST_DIR = NS_STANDARDIZED_TEST_DIR
 
-    X_train, y_train = load_all_data(TRAIN_DIR)
-    X_valid, y_valid = load_all_data(VALID_DIR)
-    X_test, y_test = load_all_data(TEST_DIR)
+    if train:
+        X_train, y_train = load_all_data(TRAIN_DIR)
+        X_valid, y_valid = load_all_data(VALID_DIR)
 
-    X_train.pop(1)  # remove 1x1 feature
-    X_valid.pop(1)
-    X_test.pop(1)
+        X_train.pop(1)  # remove 1x1 feature
+        X_valid.pop(1)
+        X_train = X_train[:3]
+        X_valid = X_valid[:3]
 
-    X_train = X_train[:3]
-    X_valid = X_valid[:3]
-    X_test = X_test[:3]
+        X_train = get_features(X_train, features=features)
+        X_valid = get_features(X_valid, features=features)
 
-    for index in range(len(X_train)):
-        if len(X_train[index]) < 3:
-            X_train[index] = create_3d_array(X_train[index])
-
-        if len(X_valid[index]) < 3:
-            X_valid[index] = create_3d_array(X_valid[index])
-
-        if len(X_test[index]) < 3:
-            X_test[index] = create_3d_array(X_test[index])
-
-    if create_4d_arr:
         for index in range(len(X_train)):
-            X_train[index] = create_4d_array(X_train[index])
-            X_valid[index] = create_4d_array(X_valid[index])
-            X_test[index] = create_4d_array(X_test[index])
+            if len(X_train[index]) < 3:
+                X_train[index] = create_3d_array(X_train[index])
 
-    dict_mapping = dict((y_label, index) for index, y_label in enumerate(np.unique(y_train)))
-    dict_mapping_path = os.path.join(TRAIN_DIR, f'dict_mapping_{num_of_classes}.pickle')
-    if not os.path.isfile(dict_mapping_path):
-        save_data(dict_mapping, TRAIN_DIR, f'dict_mapping_{num_of_classes}')
+            if len(X_valid[index]) < 3:
+                X_valid[index] = create_3d_array(X_valid[index])
 
-    y_train = [dict_mapping[label] for label in y_train]
-    y_valid = [dict_mapping[label] for label in y_valid]
-    y_test = [dict_mapping[label] for label in y_test]
+        if create_4d_arr:
+            for index in range(len(X_train)):
+                X_train[index] = create_4d_array(X_train[index])
+                X_valid[index] = create_4d_array(X_valid[index])
 
-    weight_class = calculate_weights(y_train)
-    save_data(dict_mapping, TRAIN_DIR, f'weight_class_{num_of_classes}')
+        weight_class = calculate_weights(y_train)
+        if not os.path.exists(os.path.join(NS_DATA_DIR, 'weight_class')):
+            save_data(weight_class, NS_DATA_DIR, 'weight_class')
 
-    return X_train, y_train, X_valid, y_valid, X_test, y_test, weight_class, dict_mapping
+
+        return X_train, y_train, X_valid, y_valid, weight_class
+
+    else:
+        X_test, y_test = load_all_data(TEST_DIR)
+        X_test.pop(1)
+        X_test = X_test[:3]
+
+        for index in range(len(X_test)):
+            if len(X_test[index]) < 3:
+                X_test[index] = create_3d_array(X_test[index])
+
+        if create_4d_arr:
+            for index in range(len(X_test)):
+                X_test[index] = create_4d_array(X_test[index])
+
+        label_to_index = load_data(NS_DATA_DIR, 'label_to_index')
+        weight_class = load_data(NS_DATA_DIR, 'weight_class')
+        X_test = get_features(X_test, features=features)
+
+        return X_test, y_test, weight_class, label_to_index

@@ -1,11 +1,9 @@
-from functools import partial
 from typing import List, Tuple
 
 import keras
 from keras.engine import Layer
 from keras.initializers import Initializer
-from keras.layers import Conv2D, BatchNormalization, GlobalAvgPool2D, LeakyReLU, SpatialDropout2D, \
-    Conv1D, Activation, Dropout
+from keras.layers import Conv2D, BatchNormalization, GlobalAvgPool2D, Conv1D, Activation, Dropout, LeakyReLU, Flatten
 from keras.regularizers import Regularizer
 
 kernel_init = keras.initializers.glorot_uniform()
@@ -21,8 +19,7 @@ def create_cnn_layer(input_layer: "Layer",
                      bias_init: str or "Initializer" = bias_init,
                      strides: int or Tuple[int, int] = (1, 1),
                      kernel_regularizer: Regularizer = None,
-                     activation: bool = True,
-                     one_d: bool = False) -> "Layer":
+                     activation: bool = True) -> "Layer":
     """
     Given input layer and number of filters, do 2D convolution
     :param input_layer: Input layer
@@ -35,14 +32,9 @@ def create_cnn_layer(input_layer: "Layer",
     :param strides
     :param kernel_regularizer
     :param activation
-    :param one_d: whether to do 1D or 2D convolution
     :return: Layer
     """
-    if one_d:
-        conv = Conv1D
-    else:
-        conv = Conv2D
-
+    conv = Conv2D
     layer = conv(num_filter,
                  strides=strides,
                  kernel_size=kernel_size,
@@ -54,7 +46,7 @@ def create_cnn_layer(input_layer: "Layer",
     if batch_normalization:
         layer = BatchNormalization()(layer)
     if activation:
-        layer = Activation('relu')(layer)
+        layer = LeakyReLU()(layer)
 
     layer = Dropout(dropout)(layer)
 
@@ -66,7 +58,7 @@ def create_cnn_network(input_layer: "Layer",
                        dropout: float = 0,
                        batch_normalization: bool = False,
                        kernels: List[int] or List[Tuple] = None,
-                       one_d: bool = False) -> "Layer":
+                       flatting: bool = False) -> "Layer":
     """
     Given input layer and number of filters, creates network
     :param input_layer:
@@ -74,19 +66,21 @@ def create_cnn_network(input_layer: "Layer",
     :param kernels:
     :param dropout
     :param batch_normalization
-    :param one_d: Conv1D or Conv2D
+    :param flatting: Flattening or GlobalAvgPooling
     :return:
     """
     if kernels is None:
-        kernels = [(2, 2)] * len(num_of_filters)
+        kernels = (2, 2)
 
     layer = input_layer
     for index, filter in enumerate(num_of_filters):
         layer = create_cnn_layer(input_layer=layer,
                                  num_filter=filter,
-                                 kernel_size=kernels[index],
+                                 kernel_size=kernels,
                                  dropout=dropout,
-                                 batch_normalization=batch_normalization,
-                                 one_d=one_d)
-    layer = GlobalAvgPool2D()(layer)
+                                 batch_normalization=batch_normalization)
+    if flatting:
+        layer = Flatten()(layer)
+    else:
+        layer = GlobalAvgPool2D()(layer)
     return layer

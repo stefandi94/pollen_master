@@ -3,15 +3,13 @@
 import json
 import os
 import os.path as osp
-import pickle
 from collections import Counter
 
 import numpy as np
 import pandas as pd
 
-from settings import NS_RAW_DATA_DIR, NS_DATA_DIR, OS_DATA_DIR, OS_RAW_DATA_DIR
+from settings import NS_RAW_DATA_DIR, POLLEN_TYPES, NEW_RAW_DATA, NEW_DATA
 from utils.preprocessing import label_to_index, calculate_and_check_shapes
-from utils.utilites import count_values
 
 
 def transform_raw_data(raw_data_path, classes_to_take=None):
@@ -21,7 +19,10 @@ def transform_raw_data(raw_data_path, classes_to_take=None):
 
     class_to_num, string_labels = label_to_index(files)
 
-    for file_name in files:
+    for index, file_name in enumerate(files):
+        if index % 2 == 0:
+            print(f'Current file is {file_name}')
+
         if file_name.split(".")[-1] != "json":
             continue
 
@@ -80,43 +81,6 @@ def find_most_common(label_dict, n=10):
 
 
 if __name__ == '__main__':
-    with open('label_dict_ns.json', 'r') as fp:
-        label_dict_ns = json.load(fp)
-
-    label_dict_ns = dict((key, int(value)) for key, value in label_dict_ns.items())
-
-    ns_most_common = find_most_common(label_dict_ns)
-    most_common_labels = [label[0] for label in ns_most_common]
-    data, enocoded_labels, string_labels, class_to_num, feature_names = transform_raw_data(NS_RAW_DATA_DIR, most_common_labels)
+    class_to_num, string_labels = transform_raw_data(NEW_RAW_DATA)
+    data, enocoded_labels, string_labels, class_to_num, feature_names = transform_raw_data(NEW_RAW_DATA)
     print()
-    # num_to_class = dict((value, key) for key, value in class_to_num.items())
-    # encoded_label_dict = count_values(enocoded_labels)
-    # string_label_dict = dict()
-    #
-    # for key, value in encoded_label_dict.items():
-    #     string_label_dict[num_to_class[key]] = str(value)
-    #
-    # with open('label_dict_ns.json', 'w') as fp:
-    #     json.dump(string_label_dict, fp)
-    #
-    # class_to_num = dict_int_to_string(class_to_num)
-    #
-    # with open('class_to_num_ns.json', 'w') as fp:
-    #     json.dump(class_to_num, fp)
-    # print()
-    # with open('label_dict_ns.json', 'r') as fp:
-    #     label_dict_ns = json.load(fp)
-    #
-    # with open('label_dict_os.json', 'r') as fp:
-    #     label_dict_os = json.load(fp)
-    #
-    # ns_most_common = find_most_common(label_dict_ns)
-    # os_most_common = find_most_common(label_dict_os)
-    #
-    with open('ns_most_common.json', 'w') as fp:
-        json.dump(ns_most_common, fp)
-    # with open('os_most_common.json', 'w') as fp:
-    #     json.dump(os_most_common, fp)
-
-    # with open(osp.join(NS_DATA_DIR, 'label_to_index_os.pckl'), 'wb') as handle:
-    #     pickle.dump(class_to_num, handle, protocol=pickle.HIGHEST_PROTOCOL)

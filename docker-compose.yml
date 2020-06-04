@@ -1,8 +1,9 @@
 version: '3'
 services:
-  web:
-    build: .
-    ports:
-      - "5000:5000"
-  redis:
-    image: "redis:alpine"
+  pollen:
+    image: pollen:latest
+    build:
+      context: .
+    volumes:
+    - ./data/extracted/NS:/home/pollen/data/extracted/NS
+    - ./model_weights/CNN_2D/:/home/pollen/model_weights/CNN_2D

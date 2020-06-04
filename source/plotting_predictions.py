@@ -2,24 +2,16 @@ import os
 
 import matplotlib.pyplot as plt
 import numpy as np
-import seaborn as sns
 import pandas as pd
 from sklearn.metrics import confusion_matrix
-from sklearn.utils.multiclass import unique_labels
 
-from utils.utilites import count_values, smooth_curve
+from utils.utilites import count_values
 
 
-# def plot_confusion_matrix(confusion_matrix, classes, path, show_plot):
-#     df_cm = pd.DataFrame(confusion_matrix, index=[i for i in classes], columns=[i for i in classes])
-#     plt.figure(figsize=(20, 15))
-#     sns.heatmap(df_cm, annot=True)
-#     plt.savefig(os.path.join(path, 'conf_matrix.png'))
-#
-#     if show_plot:
-#         plt.show()
-def plot_confusion_matrix(y_true, y_pred,
-                          classes, path,
+def plot_confusion_matrix(y_true,
+                          y_pred,
+                          classes,
+                          path=None,
                           normalize=False,
                           title=None,
                           cmap=plt.cm.Blues,
@@ -32,7 +24,7 @@ def plot_confusion_matrix(y_true, y_pred,
     # Compute confusion matrix
     cm = confusion_matrix(y_true, y_pred)
     # Only use the labels that appear in the data
-    classes = classes[unique_labels(y_true + y_pred)]
+    # classes = classes[unique_labels(y_true + y_pred)]
     if normalize:
         cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
 
@@ -64,24 +56,13 @@ def plot_confusion_matrix(y_true, y_pred,
                     ha="center", va="center",
                     color="white" if cm[i, j] > thresh else "black")
     fig.tight_layout()
-    plt.savefig(os.path.join(path, 'conf_matrix.png'))
+
+    if path:
+        plt.savefig(os.path.join(path, 'conf_matrix.png'))
 
     if show_plot:
         plt.show()
     return ax
-
-
-# np.set_printoptions(precision=2)
-
-# Plot non-normalized confusion matrix
-# plot_confusion_matrix(y_test, y_pred, classes=class_names,
-#                       title='Confusion matrix, without normalization')
-
-# Plot normalized confusion matrix
-# plot_confusion_matrix(y_test, y_pred, classes=class_names, normalize=True,
-#                       title='Normalized confusion matrix')
-#
-# plt.show()
 
 
 # TODO: create function which will read history log and plot accuracy and loss over time
@@ -125,14 +106,14 @@ def plot_confidence(true_conf, false_conf, path, show_plot):
         plt.show()
 
 
-def plot_classes(y_true, y_pred, path, num_of_classes, show_plot):
+def plot_classes(y_true, y_pred, path, classes, show_plot):
     plt.clf()
 
     class_pred = [clas[0] for clas in y_pred]
     pred_dict = count_values(class_pred)
     true_dict = count_values(y_true)
 
-    for i in range(num_of_classes):
+    for i in range(len(classes)):
         if i not in pred_dict.keys():
             pred_dict[i] = 0
 
@@ -141,10 +122,12 @@ def plot_classes(y_true, y_pred, path, num_of_classes, show_plot):
 
     legend = ['predicted', 'true']
     plt.figure(figsize=(20, 15))
-    plt.bar(np.arange(-0.2, num_of_classes - 1, 1), list(pred_dict.values()), width=0.3, align='center', color='r')
-    plt.bar(np.arange(0.2, num_of_classes, 1), list(true_dict.values()), width=0.3, align='center', color='b')
+    plt.bar(np.arange(-0.2, len(classes) - 1, 1), list(pred_dict.values()), width=0.3, align='center', color='r')
+    plt.bar(np.arange(0.2, len(classes), 1), list(true_dict.values()), width=0.3, align='center', color='b')
 
-    plt.xticks(range(len(true_dict)), list(true_dict.keys()))
+    # plt.xticks(range(len(true_dict)), list(true_dict.keys()))
+    plt.xticks(range(len(true_dict)), classes)
+
     plt.legend(legend, loc='best')
     plt.title('Number of true and predicted class')
     plt.savefig(os.path.join(path, 'classes.png'))
@@ -153,7 +136,7 @@ def plot_classes(y_true, y_pred, path, num_of_classes, show_plot):
         plt.show()
 
 
-def plot_confidence_per_class(true_dicti, false_dicti, num_of_classes, path, show_plot):
+def plot_confidence_per_class(true_dicti, false_dicti, classes, path, show_plot):
     plt.clf()
 
     bins = np.arange(0, 1, 0.05)
@@ -168,10 +151,10 @@ def plot_confidence_per_class(true_dicti, false_dicti, num_of_classes, path, sho
 
     legend = ['true_confidence', 'false_confidence']
     plt.figure(figsize=(20, 15))
-    plt.bar(np.arange(-0.2, num_of_classes - 1, 1), list(mean_true_conf.values()), width=0.3, align='center', color='r')
-    plt.bar(np.arange(0.2, num_of_classes, 1), list(mean_false_conf.values()), width=0.3, align='center', color='b')
+    plt.bar(np.arange(-0.2, len(classes) - 1, 1), list(mean_true_conf.values()), width=0.3, align='center', color='r')
+    plt.bar(np.arange(0.2, len(classes), 1), list(mean_false_conf.values()), width=0.3, align='center', color='b')
 
-    plt.xticks(range(len(mean_true_conf)), list(mean_false_conf.keys()))
+    plt.xticks(range(len(mean_true_conf)), classes)
     plt.title('Confidence per class')
     plt.legend(legend, loc='best')
     plt.savefig(os.path.join(path, 'confidence_per_class.png'))
@@ -180,7 +163,7 @@ def plot_confidence_per_class(true_dicti, false_dicti, num_of_classes, path, sho
         plt.show()
 
 
-def plot_history(log_path, smooth=False, factor=0.8, show_plot=False):
+def plot_history(log_path, show_plot=False):
     plt.clf()
     data = pd.read_csv(os.path.join(log_path, 'model_history_log.csv'))
 
@@ -192,12 +175,6 @@ def plot_history(log_path, smooth=False, factor=0.8, show_plot=False):
     val_acc = data['val_acc']
     loss = data['loss']
     val_loss = data['val_loss']
-
-    if smooth:
-        acc = smooth_curve(acc, factor=factor)
-        val_acc = smooth_curve(val_acc, factor=factor)
-        loss = smooth_curve(loss, factor=factor)
-        val_loss = smooth_curve(val_loss, factor=factor)
 
     plt.plot(epochs, acc, 'bo', label='Training acc')
     plt.plot(epochs, val_acc, 'b', label='Validation acc')

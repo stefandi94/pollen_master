@@ -1,14 +1,10 @@
 import os
 import pickle
 
-from utils.utilites import count_values
-
-import numpy as np
 from keras.utils import to_categorical
 
 from settings import OS_TRAIN_DIR, NS_TRAIN_DIR, NS_DATA_DIR, OS_DATA_DIR
-from source.get_model import get_model
-from source.models import CNN_2D
+from source.models import CNNModel
 from utils.converting_raw_data import transform_raw_data
 from utils.split_data import load_data, convert_data_to_normal_0_1, convert_data_to_standard_normal
 
@@ -78,7 +74,7 @@ new_labels = [dict_mapping[label] for label in labels]
 # new_labels = [labels_pickle_mapping[label] for label in new_labels]
 cate_label = to_categorical(new_labels, num_classes=NUM_OF_CLASSES)
 # cate_shuffled_labels = to_categorical(new_shuffled_labels, num_classes=NUM_OF_CLASSES)
-dl_model = CNN_2D()
+dl_model = CNNModel()
 dl_model.load_model(parameters['load_dir'])
 
 # y_pred = dl_model.predict(data)

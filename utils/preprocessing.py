@@ -28,9 +28,9 @@ def normalize_image(opd, cut, normalize=False, smooth=True):
         # im[:,22:24] = 0
         im = np.transpose(im)
         if normalize:
-            return np.asarray(im / im.sum()).astype('float32')
+            return np.asarray(im / im.sum()).astype('float64')
         else:
-            return np.asarray(im).astype('float32')
+            return np.asarray(im).astype('float64')
 
 
 def normalize_lifitime(opd, normalize=True):
@@ -48,9 +48,9 @@ def normalize_lifitime(opd, normalize=True):
         A = lt_im
         if normalize:
             if (maxx > 0) and (B.max() > 0):
-                return (A / maxx).astype('float32'), (B / B.max()).astype('float32')
+                return (A / maxx).astype('float64'), (B / B.max()).astype('float64')
         else:
-            return A.astype('float32'), B.astype('float32')
+            return A.astype('float64'), B.astype('float64')
 
 
 def savitzky_golay(y, window_size, order, deriv=0, rate=1):
@@ -91,20 +91,20 @@ def spec_correction(opd, normalize=True):
     if normalize:
         A = res_spec
         if A.max() > 0:
-            return (A / A.max()).astype('float32')
+            return (A / A.max()).astype('float64')
     else:
-        return res_spec.astype('float32')
+        return res_spec.astype('float64')
 
 
 def size_particle(opd, scale_factor=1):
     image = np.asarray(opd['Scattering']['Image']).reshape(-1, 24)
-    x = (np.asarray(image, dtype='float32').reshape(-1, 24)[:, :]).sum()
+    x = (np.asarray(image, dtype='float64').reshape(-1, 24)[:, :]).sum()
     if x < 5500000:
         return 0.5
     elif (x >= 5500000) and (x < 500000000):
-        return (9.95e-01 * np.log(3.81e-05 * x) - 4.84e+00).astype('float32')
+        return (9.95e-01 * np.log(3.81e-05 * x) - 4.84e+00).astype('float64')
     else:
-        return (0.0004 * x ** 0.5 - 3.9).astype('float32')
+        return (0.0004 * x ** 0.5 - 3.9).astype('float64')
 
 
 def convert_filename_to_label(label):

@@ -1,8 +1,8 @@
+import os.path as osp
 import pickle
 from typing import List, Tuple
 
 import numpy as np
-import os.path as osp
 
 from settings import NS_TRAIN_DIR, NS_VALID_DIR, NS_TEST_DIR
 from utils.split_data import load_data

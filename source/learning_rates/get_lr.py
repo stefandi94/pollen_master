@@ -34,7 +34,7 @@ def choose_lr(type, X_train, batch_size, epochs):
 
     elif type == 'cosine':
         learning_rate_base = 0.001
-        warmup_epoch = int(epochs * 0.2)
+        warmup_epoch = int(epochs * 0.1)
         total_steps = int(epochs * len(X_train[0]) / batch_size)
         warmup_steps = int(warmup_epoch * len(X_train[0]) / batch_size)
 

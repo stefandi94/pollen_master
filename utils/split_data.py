@@ -1,4 +1,3 @@
-import json
 import operator
 import os
 import os.path as osp
@@ -8,8 +7,8 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 
-from utils.converting_raw_data import transform_raw_data, find_most_common
-from settings import RANDOM_STATE, OS_RAW_DATA_DIR, OS_DATA_DIR, NS_RAW_DATA_DIR, NS_DATA_DIR
+from settings import RANDOM_STATE, NEW_DATA, NEW_RAW_DATA
+from utils.converting_raw_data import transform_raw_data
 from utils.utilites import count_values
 
 np.random.seed(RANDOM_STATE)
@@ -29,9 +28,9 @@ def save_data(file, data_path, filename):
 
 def create_train_valid_test_data(data: dict,
                                  labels: list,
-                                 train_size: float = 0.75,
-                                 valid_size: float = 0.1,
-                                 test_size: float = 0.15):
+                                 train_size: float = 0.7,
+                                 valid_size: float = 0.2,
+                                 test_size: float = 0.1):
     """
         Given data and labels, split it into train,
         valid and test data and labels and then save it.
@@ -96,12 +95,11 @@ def convert_data_to_normal_0_1(data, min_value, max_value):
 
 def split_and_save_data(raw_data_path,
                         output_data_path,
-                        most_common_labels,
                         data_normalization=True,
                         data_standardization=True):
     print(f'Started transforming raw data at {datetime.now().time()}')
-    data, labels, string_labels, label_to_index, feature_names = transform_raw_data(raw_data_path, most_common_labels)
-
+    data, labels, string_labels, label_to_index, feature_names = transform_raw_data(raw_data_path)
+    save_data(string_labels, data_path=output_data_path, filename='label_names')
     save_data(label_to_index, data_path=output_data_path, filename="label_to_index")
 
     print(f'Started creating train/test data {datetime.now().time()}')
@@ -139,6 +137,10 @@ def split_and_save_data(raw_data_path,
                           data_path=standardized_path,
                           filename=feature)
 
+                save_data(file=labels_to_save[dir_index],
+                          data_path=data_path,
+                          filename='labels')
+
             if data_normalization:
                 normalize_path = osp.join(data_path, 'normalized_data')
                 if not osp.exists(normalize_path):
@@ -149,6 +151,10 @@ def split_and_save_data(raw_data_path,
                                                                stat_comp["std"]),
                           data_path=normalize_path,
                           filename=feature)
+
+                save_data(file=labels_to_save[dir_index],
+                          data_path=data_path,
+                          filename='labels')
 
             save_data(file=labels_to_save[dir_index],
                       data_path=data_path,
@@ -197,11 +203,4 @@ def create_csv(data):
 
 
 if __name__ == '__main__':
-    with open('label_dict_ns.json', 'r') as fp:
-        label_dict_ns = json.load(fp)
-
-    label_dict_ns = dict((key, int(value)) for key, value in label_dict_ns.items())
-    ns_most_common = find_most_common(label_dict_ns)
-    most_common_labels = [label[0] for label in ns_most_common]
-    split_and_save_data(NS_RAW_DATA_DIR, NS_DATA_DIR, most_common_labels)
-    # split_and_save_data(OS_RAW_DATA_DIR, OS_DATA_DIR)
+    split_and_save_data(NEW_RAW_DATA, NEW_DATA)

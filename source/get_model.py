@@ -1,11 +1,12 @@
-from source.models import CNN_1D, CNN_2D
+from source.models import LSTMModel, CNNModel
 
 
 def get_model(model_name):
-    if model_name == 'CNN_1D':
-        model = CNN_1D
-    elif model_name == 'CNN_2D':
-        model = CNN_2D
+    model_name = model_name.lower()
+    if model_name == 'lstm':
+        model = LSTMModel
+    elif model_name == 'cnn':
+        model = CNNModel
     else:
         raise Exception(f'Model name {model_name} does not exist! Please choose from CNN_1D or CNN_2D')
 

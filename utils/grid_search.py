@@ -6,7 +6,7 @@ import glob2
 import numpy as np
 from keras.utils import to_categorical
 
-from settings import WEIGHTS_DIR, NS_WEIGHTS_DIR
+from settings import NS_WEIGHTS_DIR
 from source.data_loader import data
 from source.get_model import get_model
 from source.plotting_predictions import plot_confidence, plot_classes, create_dict_conf, plot_confidence_per_class, \

@@ -1,5 +1,5 @@
-import matplotlib.pyplot as plt
 import keras.backend as K
+import matplotlib.pyplot as plt
 from keras.callbacks import Callback
 
 

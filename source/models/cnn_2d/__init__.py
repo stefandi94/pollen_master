@@ -1,1 +1,1 @@
-from .model import CNN_2D
+from .model import CNNModel
